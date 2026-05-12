@@ -1,0 +1,45 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Face Detection ROI System — Docker Compose
+# ═══════════════════════════════════════════════════════════════════════
+#
+#   Frontend (Nginx :3000)  ──proxy──▶  Backend (FastAPI :8000)
+#                                            │
+#                                      ┌─────┴─────┐
+#                                      │  SQLite    │
+#                                      │  /data/    │
+#                                      └───────────┘
+
+version: "3.8"
+
+services:
+  # ── Backend: FastAPI + MediaPipe ──────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: faceroi-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - data-volume:/data
+    environment:
+      - DATABASE_DIR=/data
+      - UPLOAD_DIR=/data/uploads
+      - PROCESSED_DIR=/data/processed
+    restart: unless-stopped
+
+  # ── Frontend: Nginx serving static files ─────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: faceroi-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  data-volume:
+    driver: local
